@@ -30,12 +30,14 @@ export const createDesignSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
   elements: z.array(elementSchema).default([]),
+  isPublic: z.boolean().optional().default(false),
 });
 
 export const updateDesignSchema = createDesignSchema
   .partial({ name: true, width: true, height: true, elements: true })
   .extend({
     version: z.number().int().nonnegative(),
+    isPublic: z.boolean().optional(),
   });
 
 export const designIdParamSchema = z.object({

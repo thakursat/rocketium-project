@@ -80,7 +80,12 @@ export function setupSockets(io: Server) {
           );
         }
 
-        const comment = await createComment(designId, parsed.data);
+        const presence = presenceByDesign.get(designId)?.get(socket.id);
+        const actor = presence
+          ? { id: presence.userId, name: presence.name }
+          : { id: socket.id, name: "Anonymous" };
+
+        const comment = await createComment(designId, actor, parsed.data);
         io.to(designId).emit("comment:created", {
           designId,
           comment: comment.toObject(),

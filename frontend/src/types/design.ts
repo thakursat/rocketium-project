@@ -29,17 +29,27 @@ export interface DesignSummary {
   _id: string;
   name: string;
   updatedAt: string;
+  createdAt: string;
   width: number;
   height: number;
   version: number;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
+  isPublic: boolean;
+  owner: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface DesignDetail extends DesignSummary {
-  owner: string;
   collaboratorIds: string[];
   elements: DesignElement[];
-  lastSavedAt?: string;
+  lastSavedAt?: string | null;
+}
+
+export interface DesignCollections {
+  owned: DesignSummary[];
+  public: DesignSummary[];
 }
 
 export interface Comment {

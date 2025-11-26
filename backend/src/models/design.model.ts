@@ -54,6 +54,11 @@ const DesignSchema = new Schema(
       ref: "User",
       default: [],
     },
+    isPublic: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   { timestamps: true }
 );

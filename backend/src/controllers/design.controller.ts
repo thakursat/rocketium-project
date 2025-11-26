@@ -32,7 +32,7 @@ export const createDesignHandler = asyncHandler(
     }
 
     const design = await createDesign(parsed.data, user.id);
-    res.status(201).json({ design: design.toObject() });
+    res.status(201).json({ design });
   }
 );
 
@@ -64,8 +64,8 @@ export const getDesignHandler = asyncHandler(
     }
 
     const design = await getDesignById(params.data.id, user.id);
-    const comments = await listComments(design.id.toString());
-    res.json({ design: design.toObject(), comments });
+    const comments = await listComments(design._id);
+    res.json({ design, comments });
   }
 );
 
@@ -96,6 +96,6 @@ export const updateDesignHandler = asyncHandler(
     }
 
     const design = await updateDesign(params.data.id, body.data, user.id);
-    res.json({ design: design.toObject() });
+    res.json({ design });
   }
 );

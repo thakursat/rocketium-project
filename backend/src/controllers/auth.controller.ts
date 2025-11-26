@@ -7,6 +7,7 @@ import {
   getUserById,
   registerUser,
 } from "../services/auth.service";
+import type { AuthenticatedRequest } from "../types/express";
 
 export const signUpHandler = asyncHandler(
   async (req: Request, res: Response) => {
@@ -43,10 +44,11 @@ export const signInHandler = asyncHandler(
 );
 
 export const meHandler = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.user) {
+  const { user } = req as AuthenticatedRequest;
+  if (!user) {
     throw new AppError("AUTH_ERROR", "Authentication required", 401);
   }
 
-  const user = await getUserById(req.user.id);
-  res.json({ user });
+  const currentUser = await getUserById(user.id);
+  res.json({ user: currentUser });
 });

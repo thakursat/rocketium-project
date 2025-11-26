@@ -4,6 +4,7 @@ import type {
   DesignElement,
   DesignSummary,
   Comment,
+  DesignCollections,
 } from "../types/design";
 
 export interface CreateDesignPayload {
@@ -11,6 +12,7 @@ export interface CreateDesignPayload {
   width: number;
   height: number;
   elements?: DesignElement[];
+  isPublic?: boolean;
 }
 
 export interface UpdateDesignPayload {
@@ -19,14 +21,15 @@ export interface UpdateDesignPayload {
   height?: number;
   elements?: DesignElement[];
   version: number;
+  isPublic?: boolean;
 }
 
 export interface DesignResponse {
-  design: DesignDetail & { version: number };
+  design: DesignDetail;
 }
 
 export interface DesignWithCommentsResponse {
-  design: DesignDetail & { version: number };
+  design: DesignDetail;
   comments: Comment[];
 }
 
@@ -42,7 +45,7 @@ export async function createDesign(
 }
 
 export async function listDesigns(token: string) {
-  return apiRequest<{ designs: DesignSummary[] }>("/designs", {
+  return apiRequest<{ designs: DesignCollections }>("/designs", {
     method: "GET",
     token,
   });
