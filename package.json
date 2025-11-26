@@ -7,7 +7,8 @@
     "dev": "concurrently \"pnpm --dir backend dev\" \"pnpm --dir frontend dev\"",
     "dev:backend": "pnpm --dir backend dev",
     "dev:frontend": "pnpm --dir frontend dev",
-    "deploy": "pnpm --dir frontend build && pnpm --dir backend build && rm -rf backend/dist/public && mkdir -p backend/dist/public && cp -R frontend/dist/. backend/dist/public/"
+    "setup": "pnpm --dir frontend install && pnpm --dir backend install",
+    "deploy": "pnpm run setup && pnpm --dir frontend build && pnpm --dir backend build && rm -rf backend/dist/public && mkdir -p backend/dist/public && cp -R frontend/dist/. backend/dist/public/"
   },
   "keywords": [],
   "author": "",
