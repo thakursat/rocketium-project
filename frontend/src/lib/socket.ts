@@ -2,7 +2,7 @@ import { io, type Socket } from "socket.io-client";
 import { API_BASE_URL } from "../api/client";
 
 function deriveDefaultSocketUrl() {
-  const fallback = "http://localhost:4000";
+  const fallback = "https://rocketium-project.onrender.com";
   try {
     const apiUrl = new URL(API_BASE_URL);
     if (apiUrl.pathname.endsWith("/api")) {
