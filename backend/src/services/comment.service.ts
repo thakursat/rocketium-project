@@ -13,6 +13,7 @@ export async function listComments(designId: string) {
 
 export async function createComment(
   designId: string,
+  user: { id: string; name: string },
   input: CreateCommentInput
 ) {
   if (!isValidObjectId(designId)) {
@@ -21,7 +22,8 @@ export async function createComment(
 
   const comment = await CommentModel.create({
     designId,
-    author: input.author,
+    authorId: user.id,
+    authorName: user.name,
     message: input.message,
     mentions: input.mentions ?? [],
     position: input.position ?? null,

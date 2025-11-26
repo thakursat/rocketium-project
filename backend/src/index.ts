@@ -15,9 +15,23 @@ async function bootstrap() {
   }
 
   const server = http.createServer(app);
+  const allowedOrigins = env.CLIENT_ORIGINS;
   const io = new Server(server, {
     cors: {
-      origin: env.CLIENT_ORIGIN ?? "*",
+      origin(origin, callback) {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        console.warn(`Blocked socket origin: ${origin}`);
+        callback(null, false);
+      },
       credentials: true,
     },
   });

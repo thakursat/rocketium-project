@@ -1,6 +1,8 @@
 export type ErrorCode =
   | "DESIGN_NOT_FOUND"
   | "COMMENT_NOT_FOUND"
+  | "USER_NOT_FOUND"
+  | "AUTH_ERROR"
   | "VALIDATION_ERROR"
   | "VERSION_CONFLICT"
   | "INTERNAL_ERROR";

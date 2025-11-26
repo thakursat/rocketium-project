@@ -8,7 +8,8 @@ import {
 const CommentSchema = new Schema(
   {
     designId: { type: Schema.Types.ObjectId, ref: "Design", required: true },
-    author: { type: String, required: true },
+    authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    authorName: { type: String, required: true },
     message: { type: String, required: true },
     mentions: { type: [String], default: [] },
     position: {

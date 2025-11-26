@@ -7,9 +7,24 @@ import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+const allowedOrigins = env.CLIENT_ORIGINS;
+
 app.use(
   cors({
-    origin: env.CLIENT_ORIGIN ?? "*",
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      console.warn(`Blocked CORS origin: ${origin}`);
+      callback(null, false);
+    },
     credentials: true,
   })
 );

@@ -43,6 +43,17 @@ const DesignSchema = new Schema(
     version: { type: Number, default: 0 },
     thumbnailUrl: { type: String },
     lastSavedAt: { type: Date },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    collaboratorIds: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
   },
   { timestamps: true }
 );

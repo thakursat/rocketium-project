@@ -4,9 +4,15 @@ import { AppError } from "../utils/errors";
 import { createCommentSchema } from "../validators/comment.validator";
 import { designIdParamSchema } from "../validators/design.validator";
 import { createComment, listComments } from "../services/comment.service";
+import { getDesignById } from "../services/design.service";
+import type { AuthenticatedRequest } from "../types/express";
 
 export const listCommentsHandler = asyncHandler(
   async (req: Request, res: Response) => {
+    const { user } = req as AuthenticatedRequest;
+    if (!user) {
+      throw new AppError("AUTH_ERROR", "Authentication required", 401);
+    }
     const params = designIdParamSchema.safeParse(req.params);
     if (!params.success) {
       throw new AppError(
@@ -17,6 +23,7 @@ export const listCommentsHandler = asyncHandler(
       );
     }
 
+    await getDesignById(params.data.id, user.id);
     const comments = await listComments(params.data.id);
     res.json({ comments });
   }
@@ -24,6 +31,10 @@ export const listCommentsHandler = asyncHandler(
 
 export const createCommentHandler = asyncHandler(
   async (req: Request, res: Response) => {
+    const { user } = req as AuthenticatedRequest;
+    if (!user) {
+      throw new AppError("AUTH_ERROR", "Authentication required", 401);
+    }
     const params = designIdParamSchema.safeParse(req.params);
     if (!params.success) {
       throw new AppError(
@@ -44,7 +55,8 @@ export const createCommentHandler = asyncHandler(
       );
     }
 
-    const comment = await createComment(params.data.id, body.data);
+    await getDesignById(params.data.id, user.id);
+    const comment = await createComment(params.data.id, user, body.data);
     res.status(201).json({ comment: comment.toObject() });
   }
 );

@@ -6,29 +6,39 @@ import type {
   UpdateDesignInput,
 } from "../validators/design.validator";
 
-export async function createDesign(input: CreateDesignInput) {
+function accessibleFilter(userId: string) {
+  return {
+    $or: [{ owner: userId }, { collaboratorIds: userId }],
+  };
+}
+
+export async function createDesign(input: CreateDesignInput, ownerId: string) {
   const design = await DesignModel.create({
     ...input,
     elements: input.elements ?? [],
     version: 0,
     lastSavedAt: new Date(),
+    owner: ownerId,
   });
   return design;
 }
 
-export async function listDesigns() {
-  return DesignModel.find()
+export async function listDesigns(userId: string) {
+  return DesignModel.find(accessibleFilter(userId))
     .sort({ updatedAt: -1 })
     .select("name updatedAt thumbnailUrl version width height createdAt")
     .lean();
 }
 
-export async function getDesignById(id: string) {
+export async function getDesignById(id: string, userId: string) {
   if (!isValidObjectId(id)) {
     throw new AppError("DESIGN_NOT_FOUND", "Design not found", 404);
   }
 
-  const design = await DesignModel.findById(id);
+  const design = await DesignModel.findOne({
+    _id: id,
+    ...accessibleFilter(userId),
+  });
   if (!design) {
     throw new AppError("DESIGN_NOT_FOUND", "Design not found", 404);
   }
@@ -36,8 +46,12 @@ export async function getDesignById(id: string) {
   return design;
 }
 
-export async function updateDesign(id: string, input: UpdateDesignInput) {
-  const design = await getDesignById(id);
+export async function updateDesign(
+  id: string,
+  input: UpdateDesignInput,
+  userId: string
+) {
+  const design = await getDesignById(id, userId);
 
   if (input.version !== design.version) {
     throw new AppError("VERSION_CONFLICT", "Design version mismatch", 409, {
