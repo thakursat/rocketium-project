@@ -40,7 +40,6 @@ const DesignSchema = new Schema(
     width: { type: Number, required: true },
     height: { type: Number, required: true },
     elements: { type: [DesignElementSchema], default: [] },
-    version: { type: Number, default: 0 },
     thumbnailUrl: { type: String },
     lastSavedAt: { type: Date },
     owner: {

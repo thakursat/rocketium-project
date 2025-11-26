@@ -32,7 +32,6 @@ export interface DesignSummary {
   createdAt: string;
   width: number;
   height: number;
-  version: number;
   thumbnailUrl?: string | null;
   isPublic: boolean;
   owner: {

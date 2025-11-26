@@ -20,7 +20,6 @@ export interface UpdateDesignPayload {
   width?: number;
   height?: number;
   elements?: DesignElement[];
-  version: number;
   isPublic?: boolean;
 }
 

@@ -4,7 +4,6 @@ export type ErrorCode =
   | "USER_NOT_FOUND"
   | "AUTH_ERROR"
   | "VALIDATION_ERROR"
-  | "VERSION_CONFLICT"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {

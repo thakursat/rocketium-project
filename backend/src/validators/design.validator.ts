@@ -36,7 +36,6 @@ export const createDesignSchema = z.object({
 export const updateDesignSchema = createDesignSchema
   .partial({ name: true, width: true, height: true, elements: true })
   .extend({
-    version: z.number().int().nonnegative(),
     isPublic: z.boolean().optional(),
   });
 

@@ -39,7 +39,6 @@ export async function createDesign(
   const design = await DesignModel.create({
     ...input,
     elements: input.elements ?? [],
-    version: 0,
     lastSavedAt: new Date(),
     owner: ownerId,
     isPublic: input.isPublic ?? false,
@@ -120,12 +119,6 @@ export async function updateDesign(
     throw new AppError("DESIGN_NOT_FOUND", "Design not found", 404);
   }
 
-  if (input.version !== design.version) {
-    throw new AppError("VERSION_CONFLICT", "Design version mismatch", 409, {
-      currentVersion: design.version,
-    });
-  }
-
   const isOwner = isObjectIdEqual(design.owner as Types.ObjectId, userId);
 
   if (typeof input.name === "string") {
@@ -142,17 +135,19 @@ export async function updateDesign(
   }
 
   if (typeof input.isPublic === "boolean") {
-    if (!isOwner) {
-      throw new AppError(
-        "AUTH_ERROR",
-        "Only the owner can change visibility",
-        403
-      );
+    const nextVisibility = input.isPublic;
+    if (nextVisibility !== design.isPublic) {
+      if (!isOwner) {
+        throw new AppError(
+          "AUTH_ERROR",
+          "Only the owner can change visibility",
+          403
+        );
+      }
+      design.isPublic = nextVisibility;
     }
-    design.isPublic = input.isPublic;
   }
 
-  design.version += 1;
   design.lastSavedAt = new Date();
 
   await design.save();

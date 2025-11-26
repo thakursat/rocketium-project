@@ -26,9 +26,3 @@ export interface DesignElement {
   zIndex: number;
   metadata?: Record<string, unknown>;
 }
-
-export interface DesignSnapshot {
-  version: number;
-  updatedAt: Date;
-  elements: DesignElement[];
-}

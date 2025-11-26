@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createDesign, listDesigns } from "../api/designs";
 import type {
@@ -8,6 +8,7 @@ import type {
 } from "../types/design";
 import type { ApiError } from "../api/client";
 import { useAppSelector } from "../hooks/store";
+import { CANVAS_PRESETS, DEFAULT_CANVAS_PRESET } from "../constants/canvas";
 
 export default function DesignListPage() {
   const { token, user } = useAppSelector((state) => state.auth);
@@ -52,6 +53,8 @@ export default function DesignListPage() {
   const handleCreateDesign = async (input: {
     name: string;
     isPublic: boolean;
+    width: number;
+    height: number;
   }) => {
     if (!token || isCreating) return;
     setIsCreating(true);
@@ -59,8 +62,8 @@ export default function DesignListPage() {
       const result = await createDesign(
         {
           name: input.name,
-          width: 1080,
-          height: 1080,
+          width: input.width,
+          height: input.height,
           elements: [],
           isPublic: input.isPublic,
         },
@@ -201,7 +204,12 @@ interface CreateDesignModalProps {
   isOpen: boolean;
   isSubmitting: boolean;
   onCancel: () => void;
-  onSubmit: (input: { name: string; isPublic: boolean }) => void;
+  onSubmit: (input: {
+    name: string;
+    isPublic: boolean;
+    width: number;
+    height: number;
+  }) => void;
 }
 
 function CreateDesignModal({
@@ -212,11 +220,20 @@ function CreateDesignModal({
 }: CreateDesignModalProps) {
   const [name, setName] = useState("Untitled design");
   const [isPublic, setIsPublic] = useState(false);
+  const [presetId, setPresetId] = useState<string>(DEFAULT_CANVAS_PRESET.id);
+
+  const selectedPreset = useMemo(() => {
+    return (
+      CANVAS_PRESETS.find((preset) => preset.id === presetId) ||
+      DEFAULT_CANVAS_PRESET
+    );
+  }, [presetId]);
 
   useEffect(() => {
     if (isOpen) {
       setName("Untitled design");
       setIsPublic(false);
+      setPresetId(DEFAULT_CANVAS_PRESET.id);
     }
   }, [isOpen]);
 
@@ -230,7 +247,12 @@ function CreateDesignModal({
     if (!trimmed) {
       return;
     }
-    onSubmit({ name: trimmed, isPublic });
+    onSubmit({
+      name: trimmed,
+      isPublic,
+      width: selectedPreset.width,
+      height: selectedPreset.height,
+    });
   };
 
   return (
@@ -238,7 +260,7 @@ function CreateDesignModal({
       <div className="modal-card">
         <header className="modal-header">
           <h2>Create new design</h2>
-          <p>Choose a name and visibility for your new design.</p>
+          <p>Choose a name, size, and visibility for your new design.</p>
         </header>
         <form className="modal-form" onSubmit={handleSubmit}>
           <div className="modal-body">
@@ -255,6 +277,29 @@ function CreateDesignModal({
                 minLength={2}
               />
             </label>
+            <fieldset className="modal-size-group">
+              <legend>Canvas size</legend>
+              <div className="modal-size-options">
+                {CANVAS_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={
+                      preset.id === presetId
+                        ? "modal-size-option active"
+                        : "modal-size-option"
+                    }
+                    onClick={() => setPresetId(preset.id)}
+                    disabled={isSubmitting}
+                  >
+                    <span className="modal-size-label">{preset.label}</span>
+                    <span className="modal-size-meta">
+                      {preset.width}×{preset.height}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <fieldset className="modal-radio-group">
               <legend>Visibility</legend>
               <label className="radio-option">

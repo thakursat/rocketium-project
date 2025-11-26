@@ -16,7 +16,6 @@ export interface SerializedDesignSummary {
   name: string;
   width: number;
   height: number;
-  version: number;
   thumbnailUrl: string | null;
   updatedAt: string;
   createdAt: string;
@@ -37,7 +36,6 @@ type LeanDesignSummary = {
   name: string;
   width: number;
   height: number;
-  version: number;
   thumbnailUrl?: string | null;
   updatedAt: LeanDate;
   createdAt: LeanDate;
@@ -96,7 +94,6 @@ export function serializeDesignSummary(
     name: design.name,
     width: design.width,
     height: design.height,
-    version: design.version,
     thumbnailUrl: design.thumbnailUrl ?? null,
     updatedAt: toIsoString(design.updatedAt) ?? new Date().toISOString(),
     createdAt: toIsoString(design.createdAt) ?? new Date().toISOString(),
@@ -113,7 +110,6 @@ export function serializeDesignDetail(
     name: design.name,
     width: design.width,
     height: design.height,
-    version: design.version,
     thumbnailUrl: design.thumbnailUrl,
     updatedAt: (design as DesignDocument).updatedAt ?? design.updatedAt,
     createdAt: (design as DesignDocument).createdAt ?? design.createdAt,
