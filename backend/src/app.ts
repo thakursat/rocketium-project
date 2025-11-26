@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import routes from "./routes";
 import env from "./config/env";
 import { notFoundHandler } from "./middleware/notFound";
@@ -36,6 +37,17 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api", routes);
+
+const staticDir = path.resolve(__dirname, "public");
+app.use(express.static(staticDir));
+
+app.get(/^\/(?!api).*/, (_req, res, next) => {
+  res.sendFile(path.join(staticDir, "index.html"), (error) => {
+    if (error) {
+      next(error);
+    }
+  });
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);

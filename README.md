@@ -147,3 +147,25 @@ All IDs are MongoDB ObjectIds. Element payloads are stored inline inside a desig
    # Frontend (Vite dev server on port 3000)
    cd frontend && pnpm dev
    ```
+
+## Deployment Build
+
+Run a single command from the repository root to produce a hostable bundle:
+
+```bash
+pnpm run deploy
+```
+
+This script performs the following steps:
+
+- Builds the Vite frontend into `frontend/dist`.
+- Compiles the Express backend into `backend/dist`.
+- Copies the frontend assets into `backend/dist/public`, which the backend serves via Express static middleware.
+
+To launch the production bundle locally (after `pnpm deploy`), run:
+
+```bash
+pnpm --dir backend start
+```
+
+The backend will serve both the API and the compiled frontend from the same process, ready for deployment on a single host.
