@@ -184,17 +184,25 @@ export default function DesignEditorPage() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
-  const replaceElements = useCallback((nextElements: DesignElement[]) => {
-    let changed = false;
-    setElements((prev) => {
-      if (elementsAreEqual(prev, nextElements)) {
-        return prev;
-      }
-      changed = true;
-      return nextElements;
-    });
-    return changed;
-  }, []);
+  const replaceElements = useCallback(
+    (nextElements: DesignElement[]) => {
+      let changed = false;
+      const bounded = boundElementsToCanvas(
+        nextElements,
+        draftWidth,
+        draftHeight
+      );
+      setElements((prev) => {
+        if (elementsAreEqual(prev, bounded)) {
+          return prev;
+        }
+        changed = true;
+        return bounded;
+      });
+      return changed;
+    },
+    [draftHeight, draftWidth]
+  );
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -845,8 +853,14 @@ export default function DesignEditorPage() {
         };
       });
       if (didChange) {
-        nextElements = normalizeElements(updated);
-        return nextElements;
+        const normalized = normalizeElements(updated);
+        const bounded = boundElementsToCanvas(
+          normalized,
+          draftWidth,
+          draftHeight
+        );
+        nextElements = bounded;
+        return bounded;
       }
       return updated;
     });
@@ -899,8 +913,14 @@ export default function DesignEditorPage() {
         };
       });
       if (didChange) {
-        nextElements = normalizeElements(updated);
-        return nextElements;
+        const normalized = normalizeElements(updated);
+        const bounded = boundElementsToCanvas(
+          normalized,
+          draftWidth,
+          draftHeight
+        );
+        nextElements = bounded;
+        return bounded;
       }
       return updated;
     });
@@ -1190,9 +1210,16 @@ export default function DesignEditorPage() {
     getDesign(id, token)
       .then((response) => {
         const detail = response.design;
-        const sortedElements = normalizeElements(sortByZIndex(detail.elements));
+        const normalizedElements = normalizeElements(
+          sortByZIndex(detail.elements)
+        );
+        const boundedElements = boundElementsToCanvas(
+          normalizedElements,
+          detail.width,
+          detail.height
+        );
         setDesignMeta(detail);
-        setElements(sortedElements);
+        setElements(boundedElements);
         setComments(response.comments);
         setDraftName(detail.name);
         setDraftIsPublic(detail.isPublic);
@@ -1200,10 +1227,10 @@ export default function DesignEditorPage() {
         setDraftHeight(detail.height);
         setLastSavedAt(detail.lastSavedAt ?? detail.updatedAt ?? null);
         const lastSelectedId =
-          sortedElements[sortedElements.length - 1]?.id ?? null;
+          boundedElements[boundedElements.length - 1]?.id ?? null;
         updateSelectedElementId(lastSelectedId, { broadcast: false });
         const initialSnapshot: EditorSnapshot = {
-          elements: sortedElements.map((element) => ({ ...element })),
+          elements: boundedElements.map((element) => ({ ...element })),
           width: detail.width,
           height: detail.height,
           selectedElementId: lastSelectedId,
@@ -1258,8 +1285,14 @@ export default function DesignEditorPage() {
             return element;
           });
           if (changed) {
-            nextElements = normalizeElements(updated);
-            return nextElements;
+            const normalized = normalizeElements(updated);
+            const bounded = boundElementsToCanvas(
+              normalized,
+              draftWidth,
+              draftHeight
+            );
+            nextElements = bounded;
+            return bounded;
           }
           return updated;
         });
@@ -1513,16 +1546,21 @@ export default function DesignEditorPage() {
     beginHistoryEntry();
     let nextElements: DesignElement[] | null = null;
     setElements((prev) => {
-      const next = normalizeElements(updater([...prev]));
-      nextElements = next;
+      const normalized = normalizeElements(updater([...prev]));
+      const bounded = boundElementsToCanvas(
+        normalized,
+        draftWidth,
+        draftHeight
+      );
+      nextElements = bounded;
       if (
         selectedElementId &&
-        !next.some((element) => element.id === selectedElementId)
+        !bounded.some((element) => element.id === selectedElementId)
       ) {
-        updateSelectedElementId(next[next.length - 1]?.id ?? null);
+        updateSelectedElementId(bounded[bounded.length - 1]?.id ?? null);
       }
       setIsDirty(true);
-      return next;
+      return bounded;
     });
     if (!applyingRemotePatchRef.current && nextElements) {
       broadcastDesignPatch({ elements: nextElements });
@@ -1640,7 +1678,12 @@ export default function DesignEditorPage() {
       const detail = response.design;
       setDesignMeta(detail);
       const normalized = normalizeElements(sortByZIndex(detail.elements));
-      setElements(normalized);
+      const bounded = boundElementsToCanvas(
+        normalized,
+        detail.width,
+        detail.height
+      );
+      setElements(bounded);
       setDraftName(detail.name);
       setDraftIsPublic(detail.isPublic);
       setDraftWidth(detail.width);
@@ -1648,7 +1691,7 @@ export default function DesignEditorPage() {
       setLastSavedAt(detail.lastSavedAt ?? detail.updatedAt ?? null);
       setIsDirty(false);
       lastSavedSnapshotRef.current = toPersistedSnapshot({
-        elements: normalized.map((element) => ({ ...element })),
+        elements: bounded.map((element) => ({ ...element })),
         width: detail.width,
         height: detail.height,
         selectedElementId: selectedElementIdRef.current,
@@ -1852,6 +1895,11 @@ export default function DesignEditorPage() {
       : `${otherParticipants.length} collaborators editing`
     : "You're the only one here";
 
+  const safeCanvasScale =
+    Number.isFinite(canvasScale) && canvasScale > 0 ? canvasScale : 1;
+  const scaledCanvasWidth = Math.max(draftWidth * safeCanvasScale, 0);
+  const scaledCanvasHeight = Math.max(draftHeight * safeCanvasScale, 0);
+
   if (!id) {
     return <p className="page">Design not found.</p>;
   }
@@ -2047,74 +2095,83 @@ export default function DesignEditorPage() {
           <div
             className="editor-canvas-wrapper"
             style={{
-              width: draftWidth,
-              height: draftHeight,
-              transform: `scale(${canvasScale})`,
+              width: scaledCanvasWidth,
+              height: scaledCanvasHeight,
             }}
           >
             <div
-              className="editor-canvas"
-              style={{ width: draftWidth, height: draftHeight }}
-              ref={canvasRef}
-              onPointerMove={(event) =>
-                updateCursorPosition(event.clientX, event.clientY)
-              }
-              onPointerLeave={() => clearCursor()}
-              onClick={() => {
-                if (recentElementInteractionRef.current) {
-                  recentElementInteractionRef.current = false;
-                  return;
-                }
-                updateSelectedElementId(null);
+              className="editor-canvas-scale"
+              style={{
+                width: draftWidth,
+                height: draftHeight,
+                transform: `scale(${safeCanvasScale})`,
+                transformOrigin: "top left",
               }}
             >
-              {elements.map((element) => (
-                <CanvasElement
-                  key={element.id}
-                  element={element}
-                  isSelected={element.id === selectedElementId}
-                  isDragging={activeDragId === element.id}
-                  onPointerDown={(event) =>
-                    handleElementPointerDown(event, element)
+              <div
+                className="editor-canvas"
+                style={{ width: draftWidth, height: draftHeight }}
+                ref={canvasRef}
+                onPointerMove={(event) =>
+                  updateCursorPosition(event.clientX, event.clientY)
+                }
+                onPointerLeave={() => clearCursor()}
+                onClick={() => {
+                  if (recentElementInteractionRef.current) {
+                    recentElementInteractionRef.current = false;
+                    return;
                   }
-                  onSelect={() => handleElementSelection(element.id)}
-                  onResizeHandlePointerDown={(event, handle) =>
-                    handleResizeHandlePointerDown(event, element, handle)
-                  }
-                  onRotatePointerDown={(event) =>
-                    handleRotatePointerDown(event, element)
-                  }
-                />
-              ))}
-              {Object.entries(remoteCursors).map(([socketId, cursor]) => (
-                <div
-                  key={socketId}
-                  className="remote-cursor"
-                  style={{
-                    left: cursor.x,
-                    top: cursor.y,
-                    transform: `translate(-50%, -50%) scale(${
-                      1 / canvasScale
-                    })`,
-                    transformOrigin: "top left",
-                  }}
-                >
-                  <span
-                    className="remote-cursor-dot"
-                    style={{ backgroundColor: cursor.color }}
+                  updateSelectedElementId(null);
+                }}
+              >
+                {elements.map((element) => (
+                  <CanvasElement
+                    key={element.id}
+                    element={element}
+                    isSelected={element.id === selectedElementId}
+                    isDragging={activeDragId === element.id}
+                    onPointerDown={(event) =>
+                      handleElementPointerDown(event, element)
+                    }
+                    onSelect={() => handleElementSelection(element.id)}
+                    onResizeHandlePointerDown={(event, handle) =>
+                      handleResizeHandlePointerDown(event, element, handle)
+                    }
+                    onRotatePointerDown={(event) =>
+                      handleRotatePointerDown(event, element)
+                    }
                   />
-                  <span
-                    className="remote-cursor-label"
+                ))}
+                {Object.entries(remoteCursors).map(([socketId, cursor]) => (
+                  <div
+                    key={socketId}
+                    className="remote-cursor"
                     style={{
-                      backgroundColor: `${cursor.color}1A`,
-                      borderColor: cursor.color,
-                      color: cursor.color,
+                      left: cursor.x,
+                      top: cursor.y,
+                      transform: `translate(-50%, -50%) scale(${
+                        1 / safeCanvasScale
+                      })`,
+                      transformOrigin: "top left",
                     }}
                   >
-                    {cursor.name}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className="remote-cursor-dot"
+                      style={{ backgroundColor: cursor.color }}
+                    />
+                    <span
+                      className="remote-cursor-label"
+                      style={{
+                        backgroundColor: `${cursor.color}1A`,
+                        borderColor: cursor.color,
+                        color: cursor.color,
+                      }}
+                    >
+                      {cursor.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </main>
@@ -2787,6 +2844,65 @@ function getElementSize(element: DesignElement) {
     width: element.width ?? defaultWidth,
     height: element.height ?? defaultHeight,
   };
+}
+
+function boundElementToCanvas(
+  element: DesignElement,
+  canvasWidth: number,
+  canvasHeight: number
+): DesignElement {
+  if (canvasWidth <= 0 || canvasHeight <= 0) {
+    return element;
+  }
+
+  const { width: inferredWidth, height: inferredHeight } =
+    getElementSize(element);
+  const measuredWidth =
+    element.width !== undefined
+      ? Math.max(element.width, MIN_ELEMENT_SIZE)
+      : Math.max(inferredWidth, MIN_ELEMENT_SIZE);
+  const measuredHeight =
+    element.height !== undefined
+      ? Math.max(element.height, MIN_ELEMENT_SIZE)
+      : Math.max(inferredHeight, MIN_ELEMENT_SIZE);
+
+  const boundedWidth = clamp(measuredWidth, MIN_ELEMENT_SIZE, canvasWidth);
+  const boundedHeight = clamp(measuredHeight, MIN_ELEMENT_SIZE, canvasHeight);
+
+  const maxX = Math.max(canvasWidth - boundedWidth, 0);
+  const maxY = Math.max(canvasHeight - boundedHeight, 0);
+
+  const boundedX = clamp(element.x, 0, maxX);
+  const boundedY = clamp(element.y, 0, maxY);
+
+  const nextElement: DesignElement = {
+    ...element,
+    x: boundedX,
+    y: boundedY,
+  };
+
+  if (element.width !== undefined || boundedWidth !== measuredWidth) {
+    nextElement.width = boundedWidth;
+  }
+
+  if (element.height !== undefined || boundedHeight !== measuredHeight) {
+    nextElement.height = boundedHeight;
+  }
+
+  return nextElement;
+}
+
+function boundElementsToCanvas(
+  elements: DesignElement[],
+  canvasWidth: number,
+  canvasHeight: number
+) {
+  if (canvasWidth <= 0 || canvasHeight <= 0) {
+    return elements;
+  }
+  return elements.map((element) =>
+    boundElementToCanvas(element, canvasWidth, canvasHeight)
+  );
 }
 
 function clamp(value: number, min: number, max: number) {

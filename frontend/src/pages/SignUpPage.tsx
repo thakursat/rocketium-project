@@ -42,6 +42,14 @@ export default function SignUpPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <Link
+          to="/designs"
+          className="auth-logo"
+          aria-label="Rocketium Canvas home"
+        >
+          <span className="auth-logo-mark">RC</span>
+          <span className="auth-logo-text">Rocketium Canvas</span>
+        </Link>
         <h1>Create an account</h1>
         <p className="auth-subtitle">Collaborate on designs with your team.</p>
         {error && <div className="auth-error">{error}</div>}
